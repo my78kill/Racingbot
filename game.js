@@ -2,27 +2,44 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
 let bikeImg = new Image();
-bikeImg.src = "assets/bike.png";
+bikeImg.src="assets/bike.png";
 
 let carImg = new Image();
-carImg.src = "assets/car.png";
+carImg.src="assets/car.png";
 
 let coinImg = new Image();
-coinImg.src = "assets/coin.png";
+coinImg.src="assets/coin.png";
 
-let bike = {x:180,y:500,width:50,height:70};
+let lanes=[60,170,280];
+let laneIndex=1;
 
-let cars = [];
-let coins = [];
+let bike={x:lanes[laneIndex],y:500,width:50,height:70};
 
-let distance = 0;
-let coinScore = 0;
-let roadOffset = 0;
+let cars=[];
+let coins=[];
+
+let distance=0;
+let coinScore=0;
+
+let roadOffset=0;
+let gameRunning=false;
+
+function startGame(){
+
+document.getElementById("startScreen").style.display="none";
+
+gameRunning=true;
+
+gameLoop();
+
+}
 
 function spawnCar(){
 
+let lane=lanes[Math.floor(Math.random()*3)];
+
 cars.push({
-x:Math.random()*350,
+x:lane,
 y:-80,
 width:50,
 height:80
@@ -32,22 +49,24 @@ height:80
 
 function spawnCoin(){
 
+let lane=lanes[Math.floor(Math.random()*3)];
+
 coins.push({
-x:Math.random()*360,
+x:lane,
 y:-40,
 size:30
 });
 
 }
 
-setInterval(spawnCar,1800);
+setInterval(spawnCar,1500);
 setInterval(spawnCoin,2000);
 
 function drawRoad(){
 
-roadOffset +=5;
+roadOffset+=6;
 
-ctx.fillStyle="#333";
+ctx.fillStyle="#222";
 ctx.fillRect(0,0,400,600);
 
 ctx.strokeStyle="white";
@@ -74,17 +93,17 @@ function drawCars(){
 
 for(let i=0;i<cars.length;i++){
 
-let c = cars[i];
+let c=cars[i];
 
-c.y +=6;
+c.y+=6;
 
 ctx.drawImage(carImg,c.x,c.y,c.width,c.height);
 
 if(
-bike.x < c.x + c.width &&
-bike.x + bike.width > c.x &&
-bike.y < c.y + c.height &&
-bike.y + bike.height > c.y
+bike.x<c.x+c.width &&
+bike.x+bike.width>c.x &&
+bike.y<c.y+c.height &&
+bike.y+bike.height>c.y
 ){
 
 gameOver();
@@ -99,17 +118,17 @@ function drawCoins(){
 
 for(let i=0;i<coins.length;i++){
 
-let coin = coins[i];
+let coin=coins[i];
 
-coin.y +=5;
+coin.y+=5;
 
 ctx.drawImage(coinImg,coin.x,coin.y,coin.size,coin.size);
 
 if(
-bike.x < coin.x + coin.size &&
-bike.x + bike.width > coin.x &&
-bike.y < coin.y + coin.size &&
-bike.y + bike.height > coin.y
+bike.x<coin.x+coin.size &&
+bike.x+bike.width>coin.x &&
+bike.y<coin.y+coin.size &&
+bike.y+bike.height>coin.y
 ){
 
 coinScore++;
@@ -133,6 +152,8 @@ ctx.fillText("Coins: "+coinScore,10,60);
 
 function gameLoop(){
 
+if(!gameRunning) return;
+
 ctx.clearRect(0,0,400,600);
 
 drawRoad();
@@ -147,37 +168,74 @@ requestAnimationFrame(gameLoop);
 
 }
 
-gameLoop();
+function moveLeft(){
+
+if(laneIndex>0){
+laneIndex--;
+bike.x=lanes[laneIndex];
+}
+
+}
+
+function moveRight(){
+
+if(laneIndex<2){
+laneIndex++;
+bike.x=lanes[laneIndex];
+}
+
+}
 
 document.addEventListener("keydown",function(e){
 
-if(e.key==="ArrowLeft") bike.x -=25;
-if(e.key==="ArrowRight") bike.x +=25;
+if(e.key==="ArrowLeft") moveLeft();
+if(e.key==="ArrowRight") moveRight();
 
 });
 
 canvas.addEventListener("touchstart",function(e){
 
-let x = e.touches[0].clientX;
+let x=e.touches[0].clientX;
 
-if(x < window.innerWidth/2){
-bike.x -=25;
+if(x<window.innerWidth/2){
+moveLeft();
 }else{
-bike.x +=25;
+moveRight();
 }
 
 });
 
 function gameOver(){
 
-let score = distance;
+gameRunning=false;
 
-if (window.TelegramGameProxy){
+let score=distance;
+
+if(window.TelegramGameProxy){
 TelegramGameProxy.shareScore(score);
 }
 
-alert("💥 Crash!\nDistance: "+distance+"\nCoins: "+coinScore);
+ctx.fillStyle="black";
+ctx.fillRect(0,0,400,600);
 
-location.reload();
+ctx.fillStyle="white";
+ctx.font="30px Arial";
+
+ctx.fillText("Game Over",120,260);
+
+ctx.font="20px Arial";
+
+ctx.fillText("Distance: "+score,130,310);
+ctx.fillText("Coins: "+coinScore,140,340);
+
+ctx.fillText("Tap to Restart",110,400);
 
 }
+
+canvas.addEventListener("click",function(){
+
+if(!gameRunning){
+location.reload();
+}
+
+});
