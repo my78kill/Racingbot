@@ -1,6 +1,6 @@
-from flask import Flask, send_from_directory
-from telegram import Update, InlineQueryResultGame
-from telegram.ext import ApplicationBuilder, CommandHandler, InlineQueryHandler, ContextTypes
+from flask import Flask, render_template
+from telegram import InlineQueryResultGame, Update
+from telegram.ext import ApplicationBuilder, InlineQueryHandler, ContextTypes
 import threading
 
 TOKEN = "8665981215:AAFUIQHzg1ek9IJ5i1RXpZXMK4vAZg92Rsg"
@@ -8,28 +8,28 @@ TOKEN = "8665981215:AAFUIQHzg1ek9IJ5i1RXpZXMK4vAZg92Rsg"
 app = Flask(__name__)
 
 @app.route("/")
-def home():
-    return send_from_directory(".", "index.html")
-
-@app.route("/<path:path>")
-def static_files(path):
-    return send_from_directory(".", path)
-
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("Type @YourBotName to play Bike Racing!")
+def game():
+    return render_template("index.html")
 
 async def inline_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
     results = [
+
         InlineQueryResultGame(
-            id="bike_race",
+            id="game1",
+            game_short_name="bike_race"
+        ),
+
+        InlineQueryResultGame(
+            id="game2",
             game_short_name="bike_race"
         )
+
     ]
-    await update.inline_query.answer(results)
+
+    await update.inline_query.answer(results, cache_time=0)
 
 telegram_app = ApplicationBuilder().token(TOKEN).build()
-
-telegram_app.add_handler(CommandHandler("start", start))
 telegram_app.add_handler(InlineQueryHandler(inline_query))
 
 def run_bot():
